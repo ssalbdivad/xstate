@@ -1263,7 +1263,39 @@ function enterStates(
         actions.push(...initialActions);
       }
     }
-    if (stateNodeToEnter.type === 'final') {
+
+    function getDoneData(n: AnyStateNode): any[] | undefined {
+      // Check if done
+      if (n.type === 'compound') {
+        const childStateNode = [...statesToEnter].find((sn) => sn.parent === n);
+
+        if (childStateNode) {
+          return getDoneData(childStateNode);
+        }
+      } else if (n.type === 'parallel') {
+        const children = [...statesToEnter].filter(
+          (sn) => sn.parent === n && sn.type !== 'history'
+        );
+
+        const doneDatas = children.map(getDoneData);
+        if (doneDatas.every(Boolean)) {
+          return doneDatas;
+        }
+      } else if (n.type === 'final') {
+        return n.doneData
+          ? mapContext(n.doneData, currentState.context, currentState._event)
+          : {};
+      }
+
+      return undefined;
+    }
+
+    const doneData = getDoneData(stateNodeToEnter);
+    if (doneData) {
+      internalQueue.push(toSCXMLEvent(done(stateNodeToEnter.id, doneData)));
+    }
+
+    if (false && stateNodeToEnter.type === 'final') {
       const parent = stateNodeToEnter.parent!;
 
       if (!parent.parent) {

@@ -1049,4 +1049,61 @@ describe('parallel states', () => {
 
     expect(service.getSnapshot().value).toBe('finished');
   });
+
+  it('should recurse', () => {
+    const machine = createMachine({
+      initial: 'a',
+      states: {
+        a: {
+          type: 'parallel',
+          onDone: 'b',
+          states: {
+            a1: { initial: 'a1a', states: { a1a: { type: 'final' } } },
+            a2: { initial: 'a2a', states: { a2a: { type: 'final' } } }
+          }
+        },
+        b: {
+          type: 'final'
+        }
+      }
+    });
+
+    const service = interpret(machine).start();
+
+    expect(service.getSnapshot().value).toEqual('b');
+  });
+
+  it('should recurse 2', () => {
+    const machine = createMachine({
+      initial: 'a',
+      states: {
+        a: {
+          type: 'parallel',
+          onDone: 'b',
+          states: {
+            a1: {
+              type: 'parallel',
+              states: {
+                a1a: { type: 'final', data: { key: 'a1a' } },
+                a1b: { type: 'final', data: { key: 'a1b' } }
+              }
+            },
+            a2: {
+              initial: 'a2a',
+              states: { a2a: { type: 'final', data: { key: 'a2' } } }
+            }
+          }
+        },
+        b: {
+          type: 'final'
+        }
+      }
+    });
+
+    const service = interpret(machine).start();
+
+    const snapshot = service.getSnapshot();
+
+    expect(service.getSnapshot().value).toEqual('b');
+  });
 });
