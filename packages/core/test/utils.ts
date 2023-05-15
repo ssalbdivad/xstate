@@ -1,5 +1,7 @@
 import { toActionObject } from '../src/actions.ts';
+import { createEmptyActor } from '../src/actors/index.ts';
 import {
+  AnyActorContext,
   AnyState,
   AnyStateMachine,
   matchesState,
@@ -96,5 +98,18 @@ export function trackEntries(machine: AnyStateMachine) {
     const flushed = logs;
     logs = [];
     return flushed;
+  };
+}
+
+export function createMockActorContext(): AnyActorContext {
+  const nullActor = createEmptyActor();
+  return {
+    self: nullActor,
+    logger: console.log,
+    id: 'root_test',
+    sessionId: Math.random().toString(32).slice(2),
+    defer: () => {},
+    system: nullActor,
+    stopChild: () => {}
   };
 }

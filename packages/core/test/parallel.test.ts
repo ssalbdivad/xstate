@@ -1,7 +1,7 @@
 import { createMachine, interpret, StateValue } from '../src/index.ts';
 import { assign } from '../src/actions/assign';
 import { raise } from '../src/actions/raise';
-import { testMultiTransition } from './utils';
+import { createMockActorContext, testMultiTransition } from './utils';
 
 const composerMachine = createMachine({
   initial: 'ReadOnly',
@@ -493,7 +493,7 @@ const deepFlatParallelMachine = createMachine({
 
 describe('parallel states', () => {
   it('should have initial parallel states', () => {
-    const { initialState } = wordMachine;
+    const initialState = wordMachine.getInitialState(createMockActorContext());
 
     expect(initialState.value).toEqual({
       bold: 'off',
@@ -560,23 +560,32 @@ describe('parallel states', () => {
   });
 
   it('should have all parallel states represented in the state value', () => {
-    const nextState = wakMachine.transition(wakMachine.initialState, {
-      type: 'WAK1'
-    });
+    debugger;
+    const nextState = wakMachine.transition(
+      wakMachine.getInitialState(createMockActorContext()),
+      {
+        type: 'WAK1'
+      }
+    );
 
     expect(nextState.value).toEqual({ wak1: 'wak1sonB', wak2: 'wak2sonA' });
   });
 
   it('should have all parallel states represented in the state value (2)', () => {
-    const nextState = wakMachine.transition(wakMachine.initialState, {
-      type: 'WAK2'
-    });
+    const nextState = wakMachine.transition(
+      wakMachine.getInitialState(createMockActorContext()),
+      {
+        type: 'WAK2'
+      }
+    );
 
     expect(nextState.value).toEqual({ wak1: 'wak1sonA', wak2: 'wak2sonB' });
   });
 
   it('should work with regions without states', () => {
-    expect(flatParallelMachine.initialState.value).toEqual({
+    expect(
+      flatParallelMachine.getInitialState(createMockActorContext()).value
+    ).toEqual({
       foo: {},
       bar: {},
       baz: 'one'
@@ -585,7 +594,7 @@ describe('parallel states', () => {
 
   it('should work with regions without states', () => {
     const nextState = flatParallelMachine.transition(
-      flatParallelMachine.initialState,
+      flatParallelMachine.getInitialState(createMockActorContext()),
       { type: 'E' }
     );
     expect(nextState.value).toEqual({
@@ -596,9 +605,12 @@ describe('parallel states', () => {
   });
 
   it('should properly transition to relative substate', () => {
-    const nextState = composerMachine.transition(composerMachine.initialState, {
-      type: 'singleClickActivity'
-    });
+    const nextState = composerMachine.transition(
+      composerMachine.getInitialState(createMockActorContext()),
+      {
+        type: 'singleClickActivity'
+      }
+    );
 
     expect(nextState.value).toEqual({
       ReadOnly: {
@@ -611,7 +623,9 @@ describe('parallel states', () => {
   });
 
   it('should properly transition according to entry events on an initial state', () => {
-    expect(raisingParallelMachine.initialState.value).toEqual({
+    expect(
+      raisingParallelMachine.getInitialState(createMockActorContext()).value
+    ).toEqual({
       OUTER1: 'C',
       OUTER2: {
         INNER1: 'OFF',
@@ -622,7 +636,7 @@ describe('parallel states', () => {
 
   it('should properly transition when raising events for a parallel state', () => {
     const nextState = raisingParallelMachine.transition(
-      raisingParallelMachine.initialState,
+      raisingParallelMachine.getInitialState(createMockActorContext()),
       { type: 'EVENT_OUTER1_B' }
     );
 
@@ -675,7 +689,7 @@ describe('parallel states', () => {
     });
 
     const savedState = simultaneousMachine.transition(
-      simultaneousMachine.initialState,
+      simultaneousMachine.getInitialState(createMockActorContext()),
       { type: 'SAVE' }
     );
     const unsavedState = simultaneousMachine.transition(savedState, {
@@ -694,7 +708,9 @@ describe('parallel states', () => {
   });
 
   describe('transitions with nested parallel states', () => {
-    const initialState = nestedParallelState.initialState;
+    const initialState = nestedParallelState.getInitialState(
+      createMockActorContext()
+    );
     const simpleNextState = nestedParallelState.transition(initialState, {
       type: 'EVENT_SIMPLE'
     });
@@ -764,7 +780,12 @@ describe('parallel states', () => {
     });
 
     it('should represent the flat nested parallel states in the state value', () => {
-      const result = machine.transition(machine.initialState, { type: 'to-B' });
+      const result = machine.transition(
+        machine.getInitialState(createMockActorContext()),
+        {
+          type: 'to-B'
+        }
+      );
 
       expect(result.value).toEqual({
         B: {
@@ -778,7 +799,7 @@ describe('parallel states', () => {
   describe('deep flat parallel states', () => {
     it('should properly evaluate deep flat parallel states', () => {
       const state1 = deepFlatParallelMachine.transition(
-        deepFlatParallelMachine.initialState,
+        deepFlatParallelMachine.getInitialState(createMockActorContext()),
         { type: 'a' }
       );
       const state2 = deepFlatParallelMachine.transition(state1, { type: 'c' });
@@ -824,7 +845,9 @@ describe('parallel states', () => {
       });
 
       expect(() => {
-        machine.transition(machine.initialState, { type: 'UPDATE' });
+        machine.transition(machine.getInitialState(createMockActorContext()), {
+          type: 'UPDATE'
+        });
       }).not.toThrow();
     });
   });
@@ -879,9 +902,12 @@ describe('parallel states', () => {
         }
       });
 
-      const openMenuState = testMachine.transition(testMachine.initialState, {
-        type: 'toggle'
-      });
+      const openMenuState = testMachine.transition(
+        testMachine.getInitialState(createMockActorContext()),
+        {
+          type: 'toggle'
+        }
+      );
 
       const dashboardState = testMachine.transition(openMenuState, {
         type: 'go to dashboard'
@@ -921,9 +947,12 @@ describe('parallel states', () => {
         }
       });
 
-      const run1 = testMachine.transition(testMachine.initialState, {
-        type: 'GOTO_FOOBAZ'
-      });
+      const run1 = testMachine.transition(
+        testMachine.getInitialState(createMockActorContext()),
+        {
+          type: 'GOTO_FOOBAZ'
+        }
+      );
       const run2 = testMachine.transition(run1, { type: 'GOTO_FOOBAZ' });
 
       expect(run2.context.log.length).toBe(2);

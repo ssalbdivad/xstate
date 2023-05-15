@@ -54,6 +54,9 @@ export function getChildren(stateNode: AnyStateNode): AnyStateNode[] {
 }
 
 export function serializeMachineState(state: AnyState): SerializedState {
+  if (!state) {
+    debugger;
+  }
   const { value, context } = state;
   return JSON.stringify({
     value,

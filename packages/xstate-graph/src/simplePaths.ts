@@ -1,14 +1,20 @@
-import { EventObject, AnyStateMachine, StateFrom, EventFrom } from 'xstate';
+import {
+  EventObject,
+  AnyStateMachine,
+  StateFrom,
+  EventFrom,
+  ActorBehavior
+} from 'xstate';
 import {
   SerializedEvent,
   SerializedState,
-  SimpleBehavior,
   StatePath,
   TraversalOptions,
   VisitedContext
 } from './types';
 import { resolveTraversalOptions, createDefaultMachineOptions } from './graph';
 import { getAdjacencyMap } from './adjacency';
+import { createMockActorContext } from './shortestPaths';
 
 export function getMachineSimplePaths<TMachine extends AnyStateMachine>(
   machine: TMachine,
@@ -19,15 +25,18 @@ export function getMachineSimplePaths<TMachine extends AnyStateMachine>(
     createDefaultMachineOptions(machine)
   );
 
-  return getSimplePaths(machine as SimpleBehavior<any, any>, resolvedOptions);
+  return getSimplePaths(machine, resolvedOptions);
 }
 
 export function getSimplePaths<TState, TEvent extends EventObject>(
-  behavior: SimpleBehavior<TState, TEvent>,
+  behavior: ActorBehavior<TEvent, TState>,
   options: TraversalOptions<TState, TEvent>
 ): Array<StatePath<TState, TEvent>> {
   const resolvedOptions = resolveTraversalOptions(options);
-  const fromState = resolvedOptions.fromState ?? behavior.initialState;
+  const actorContext = createMockActorContext();
+  const fromState =
+    resolvedOptions.fromState ??
+    behavior.getInitialState(actorContext, undefined);
   const serializeState = resolvedOptions.serializeState as (
     ...args: Parameters<typeof resolvedOptions.serializeState>
   ) => SerializedState;

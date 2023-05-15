@@ -1,14 +1,10 @@
-import { EventObject } from 'xstate';
-import {
-  SerializedEvent,
-  SerializedState,
-  SimpleBehavior,
-  TraversalOptions
-} from './types';
+import { ActorBehavior, EventObject } from 'xstate';
+import { SerializedEvent, SerializedState, TraversalOptions } from './types';
 import { AdjacencyMap, resolveTraversalOptions } from './graph';
+import { createMockActorContext } from './shortestPaths';
 
 export function getAdjacencyMap<TState, TEvent extends EventObject>(
-  behavior: SimpleBehavior<TState, TEvent>,
+  behavior: ActorBehavior<TEvent, TState>,
   options: TraversalOptions<TState, TEvent>
 ): AdjacencyMap<TState, TEvent> {
   const { transition } = behavior;
@@ -20,7 +16,9 @@ export function getAdjacencyMap<TState, TEvent extends EventObject>(
     fromState: customFromState,
     stopCondition
   } = resolveTraversalOptions(options);
-  const fromState = customFromState ?? behavior.initialState;
+  const actorContext = createMockActorContext();
+  const fromState =
+    customFromState ?? behavior.getInitialState(actorContext, undefined);
   const adj: AdjacencyMap<TState, TEvent> = {};
 
   let iterations = 0;
@@ -61,7 +59,7 @@ export function getAdjacencyMap<TState, TEvent extends EventObject>(
       typeof getEvents === 'function' ? getEvents(state) : getEvents;
 
     for (const nextEvent of events) {
-      const nextState = transition(state, nextEvent);
+      const nextState = transition(state, nextEvent, actorContext);
 
       if (!options.filter || options.filter(nextState, nextEvent)) {
         adj[serializedState].transitions[

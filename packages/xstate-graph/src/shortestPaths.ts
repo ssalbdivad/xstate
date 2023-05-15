@@ -1,4 +1,11 @@
-import { EventObject, AnyStateMachine, StateFrom, EventFrom } from 'xstate';
+import {
+  EventObject,
+  AnyStateMachine,
+  StateFrom,
+  EventFrom,
+  AnyActorContext,
+  ActorBehavior
+} from 'xstate';
 import {
   SerializedEvent,
   SerializedState,
@@ -10,16 +17,32 @@ import {
 import { resolveTraversalOptions, createDefaultMachineOptions } from './graph';
 import { getAdjacencyMap } from './adjacency';
 import { machineToBehavior } from './machineToBehavior';
+import { createEmptyActor } from 'xstate/actors';
+
+export function createMockActorContext(): AnyActorContext {
+  const nullActor = createEmptyActor();
+  return {
+    self: nullActor,
+    logger: console.log,
+    id: 'root_test',
+    sessionId: Math.random().toString(32).slice(2),
+    defer: () => {},
+    system: nullActor,
+    stopChild: () => {}
+  };
+}
 
 export function getShortestPaths<TState, TEvent extends EventObject>(
-  behavior: SimpleBehavior<TState, TEvent>,
+  behavior: ActorBehavior<TEvent, TState>,
   options?: TraversalOptions<TState, TEvent>
 ): Array<StatePath<TState, TEvent>> {
   const resolvedOptions = resolveTraversalOptions(options);
   const serializeState = resolvedOptions.serializeState as (
     ...args: Parameters<typeof resolvedOptions.serializeState>
   ) => SerializedState;
-  const fromState = resolvedOptions.fromState ?? behavior.initialState;
+  const fromState =
+    resolvedOptions.fromState ??
+    behavior.getInitialState(createMockActorContext(), undefined);
   const adjacency = getAdjacencyMap(behavior, resolvedOptions);
 
   // weight, state, event

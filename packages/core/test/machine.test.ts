@@ -1,5 +1,6 @@
 import { interpret, createMachine, assign } from '../src/index';
 import { State } from '../src/State';
+import { createMockActorContext } from './utils';
 
 const pedestrianStates = {
   initial: 'walk',
@@ -99,11 +100,15 @@ describe('machine', () => {
 
   describe('machine.initialState', () => {
     it('should return a State instance', () => {
-      expect(lightMachine.initialState).toBeInstanceOf(State);
+      expect(
+        lightMachine.getInitialState(createMockActorContext())
+      ).toBeInstanceOf(State);
     });
 
     it('should return the initial state', () => {
-      expect(lightMachine.initialState.value).toEqual('green');
+      expect(
+        lightMachine.getInitialState(createMockActorContext()).value
+      ).toEqual('green');
     });
   });
 
@@ -197,9 +202,7 @@ describe('machine', () => {
     });
 
     it('machines defined without context should have a default empty object for context', () => {
-      const machine = createMachine({});
-
-      expect(machine.initialState.context).toEqual({});
+      expect(interpret(createMachine({})).getSnapshot().context).toEqual({});
     });
 
     it('should lazily create context for all interpreter instances created from the same machine template created by `provide`', () => {
@@ -233,15 +236,15 @@ describe('machine', () => {
       const testMachine1 = createMachine(testMachineConfig);
       const testMachine2 = createMachine(testMachineConfig);
 
-      expect(testMachine1.initialState.context).not.toBe(
+      expect(testMachine1.getInitialState().context).not.toBe(
         testMachine2.initialState.context
       );
 
-      expect(testMachine1.initialState.context).toEqual({
+      expect(testMachine1.getInitialState().context).toEqual({
         foo: { bar: 'baz' }
       });
 
-      expect(testMachine2.initialState.context).toEqual({
+      expect(testMachine2.getInitialState().context).toEqual({
         foo: { bar: 'baz' }
       });
     });
@@ -384,7 +387,7 @@ describe('machine', () => {
         }
       });
 
-      expect(machine.getInitialState().value).toBe('b');
+      expect(machine.getInitialState(createMockActorContext()).value).toBe('b');
     });
   });
 
