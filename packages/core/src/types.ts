@@ -1757,7 +1757,7 @@ export type AnyActorContext = ActorContext<any, any, any>;
 export interface ActorBehavior<
   TEvent extends EventObject,
   TSnapshot = any,
-  TInternalState = any,
+  TInternalState = TSnapshot,
   /**
    * Serialized internal state used for persistence & restoration
    */
