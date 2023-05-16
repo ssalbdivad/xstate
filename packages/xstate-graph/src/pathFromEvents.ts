@@ -1,4 +1,10 @@
-import { ActorBehavior, AnyStateMachine, EventObject } from 'xstate';
+import {
+  ActorBehavior,
+  ActorSystem,
+  AnyStateMachine,
+  EventObject,
+  createMockActorContext
+} from 'xstate';
 import { getAdjacencyMap } from './adjacency';
 import { SerializedState, StatePath, Steps, TraversalOptions } from './types';
 import {
@@ -6,21 +12,29 @@ import {
   createDefaultMachineOptions,
   createDefaultBehaviorOptions
 } from './graph';
-import { createMockActorContext } from './shortestPaths';
 
 function isMachine(value: any): value is AnyStateMachine {
   return !!value && '__xstatenode' in value;
 }
 
 export function getPathsFromEvents<
-  TState,
-  TEvent extends EventObject = EventObject
+  TEvent extends EventObject,
+  TSnapshot,
+  TInternalState = TSnapshot,
+  TPersisted = TInternalState,
+  TSystem extends ActorSystem<any> = ActorSystem<any>
 >(
-  behavior: ActorBehavior<TEvent, TState>,
+  behavior: ActorBehavior<
+    TEvent,
+    TSnapshot,
+    TInternalState,
+    TPersisted,
+    TSystem
+  >,
   events: TEvent[],
-  options?: TraversalOptions<TState, TEvent>
-): Array<StatePath<TState, TEvent>> {
-  const resolvedOptions = resolveTraversalOptions<TState, TEvent>(
+  options?: TraversalOptions<TInternalState, TEvent>
+): Array<StatePath<TInternalState, TEvent>> {
+  const resolvedOptions = resolveTraversalOptions<TInternalState, TEvent>(
     {
       events,
       ...options
@@ -38,8 +52,8 @@ export function getPathsFromEvents<
 
   const adjacency = getAdjacencyMap(behavior, resolvedOptions);
 
-  const stateMap = new Map<SerializedState, TState>();
-  const steps: Steps<TState, TEvent> = [];
+  const stateMap = new Map<SerializedState, TInternalState>();
+  const steps: Steps<TInternalState, TEvent> = [];
 
   const serializedFromState = serializeState(
     fromState,

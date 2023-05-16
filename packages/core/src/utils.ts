@@ -19,8 +19,10 @@ import type {
   StateValue,
   Subscribable,
   TransitionConfig,
-  TransitionConfigTarget
+  TransitionConfigTarget,
+  AnyActorContext
 } from './types.ts';
+import { createEmptyActor } from './actors/index.ts';
 
 export function keys<T extends object>(value: T): Array<keyof T & string> {
   return Object.keys(value) as Array<keyof T & string>;
@@ -467,4 +469,17 @@ export function resolveReferencedActor(
       ? { src: referenced, input: undefined }
       : referenced
     : undefined;
+}
+
+export function createMockActorContext(): AnyActorContext {
+  const nullActor = createEmptyActor();
+  return {
+    self: nullActor,
+    logger: console.log,
+    id: 'root_test',
+    sessionId: Math.random().toString(32).slice(2),
+    defer: () => {},
+    system: nullActor,
+    stopChild: () => {}
+  };
 }

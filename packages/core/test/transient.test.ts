@@ -1,4 +1,10 @@
-import { AnyState, createMachine, interpret, State } from '../src/index';
+import {
+  AnyState,
+  createMachine,
+  createMockActorContext,
+  interpret,
+  State
+} from '../src/index';
 import { raise } from '../src/actions/raise';
 import { assign } from '../src/actions/assign';
 import { stateIn } from '../src/guards';
@@ -49,6 +55,7 @@ describe('transient states (eventless transitions)', () => {
   });
 
   it('should choose the first candidate target that matches the guard (D)', () => {
+    const actorContext = createMockActorContext();
     const nextState = updateMachine.transition(
       State.from<any>(
         'G',
@@ -57,12 +64,14 @@ describe('transient states (eventless transitions)', () => {
         },
         updateMachine
       ),
-      { type: 'UPDATE_BUTTON_CLICKED' }
+      { type: 'UPDATE_BUTTON_CLICKED' },
+      actorContext
     );
     expect(nextState.value).toEqual('D');
   });
 
   it('should choose the first candidate target that matches the guard (B)', () => {
+    const actorContext = createMockActorContext();
     const nextState = updateMachine.transition(
       State.from<any>(
         'G',
@@ -72,12 +81,14 @@ describe('transient states (eventless transitions)', () => {
         },
         updateMachine
       ),
-      { type: 'UPDATE_BUTTON_CLICKED' }
+      { type: 'UPDATE_BUTTON_CLICKED' },
+      actorContext
     );
     expect(nextState.value).toEqual('B');
   });
 
   it('should choose the first candidate target that matches the guard (C)', () => {
+    const actorContext = createMockActorContext();
     const nextState = updateMachine.transition(
       State.from(
         'G',
@@ -87,12 +98,14 @@ describe('transient states (eventless transitions)', () => {
         },
         updateMachine
       ) as AnyState,
-      { type: 'UPDATE_BUTTON_CLICKED' }
+      { type: 'UPDATE_BUTTON_CLICKED' },
+      actorContext
     );
     expect(nextState.value).toEqual('C');
   });
 
   it('should choose the final candidate without a guard if none others match', () => {
+    const actorContext = createMockActorContext();
     const nextState = updateMachine.transition(
       State.from(
         'G',
@@ -102,7 +115,8 @@ describe('transient states (eventless transitions)', () => {
         },
         updateMachine
       ) as AnyState,
-      { type: 'UPDATE_BUTTON_CLICKED' }
+      { type: 'UPDATE_BUTTON_CLICKED' },
+      actorContext
     );
     expect(nextState.value).toEqual('F');
   });
@@ -194,7 +208,12 @@ describe('transient states (eventless transitions)', () => {
       }
     });
 
-    const state = machine.transition(machine.initialState, { type: 'E' });
+    const actorContext = createMockActorContext();
+    const state = machine.transition(
+      machine.getInitialState(actorContext),
+      { type: 'E' },
+      actorContext
+    );
 
     expect(state.value).toEqual({ A: 'A2', B: 'B2', C: 'C4' });
   });
@@ -250,7 +269,12 @@ describe('transient states (eventless transitions)', () => {
       }
     });
 
-    const state = machine.transition(machine.initialState, { type: 'E' });
+    const actorContext = createMockActorContext();
+    const state = machine.transition(
+      machine.getInitialState(actorContext),
+      { type: 'E' },
+      actorContext
+    );
 
     expect(state.value).toEqual({ A: 'A4', B: 'B4' });
   });
@@ -306,7 +330,12 @@ describe('transient states (eventless transitions)', () => {
       }
     });
 
-    const state = machine.transition(machine.initialState, { type: 'E' });
+    const actorContext = createMockActorContext();
+    const state = machine.transition(
+      machine.getInitialState(actorContext),
+      { type: 'E' },
+      actorContext
+    );
 
     expect(state.value).toEqual({ A: 'A4', B: 'B4' });
   });
@@ -353,8 +382,9 @@ describe('transient states (eventless transitions)', () => {
       }
     });
 
-    let state = machine.initialState; // A1, B1, C1
-    state = machine.transition(state, { type: 'A' }); // A2, B2, C2
+    const actorContext = createMockActorContext();
+    let state = machine.getInitialState(actorContext); // A1, B1, C1
+    state = machine.transition(state, { type: 'A' }, actorContext); // A2, B2, C2
     expect(state.value).toEqual({ A: 'A2', B: 'B2', C: 'C2' });
   });
 
@@ -400,25 +430,37 @@ describe('transient states (eventless transitions)', () => {
       }
     });
 
-    let state = machine.initialState; // A1, B1, C1
-    state = machine.transition(state, { type: 'A' }); // A2, B2, C2
+    const actorContext = createMockActorContext();
+    let state = machine.getInitialState(actorContext); // A1, B1, C1
+    state = machine.transition(state, { type: 'A' }, actorContext); // A2, B2, C2
     expect(state.value).toEqual({ A: 'A2', B: 'B2', C: 'C2' });
   });
 
   it('should determine the resolved initial state from the transient state', () => {
-    expect(greetingMachine.initialState.value).toEqual('morning');
+    expect(
+      greetingMachine.getInitialState(createMockActorContext()).value
+    ).toEqual('morning');
   });
 
   it('should determine the resolved state from an initial transient state', () => {
-    const morningState = greetingMachine.initialState;
+    const actorContext = createMockActorContext();
+    const morningState = greetingMachine.getInitialState(actorContext);
     expect(morningState.value).toEqual('morning');
-    const stillMorningState = greetingMachine.transition(morningState, {
-      type: 'CHANGE'
-    });
+    const stillMorningState = greetingMachine.transition(
+      morningState,
+      {
+        type: 'CHANGE'
+      },
+      actorContext
+    );
     expect(stillMorningState.value).toEqual('morning');
-    const eveningState = greetingMachine.transition(stillMorningState, {
-      type: 'RECHECK'
-    });
+    const eveningState = greetingMachine.transition(
+      stillMorningState,
+      {
+        type: 'RECHECK'
+      },
+      actorContext
+    );
     expect(eveningState.value).toEqual('evening');
   });
 
@@ -448,7 +490,11 @@ describe('transient states (eventless transitions)', () => {
       }
     });
 
-    const state = machine.transition('a', { type: 'FOO' });
+    const state = machine.transition(
+      machine.resolveStateValue('a'),
+      { type: 'FOO' },
+      createMockActorContext()
+    );
     expect(state.value).toBe('e');
   });
 
@@ -478,7 +524,11 @@ describe('transient states (eventless transitions)', () => {
       }
     });
 
-    const state = machine.transition('a', { type: 'FOO' });
+    const state = machine.transition(
+      machine.resolveStateValue('a'),
+      { type: 'FOO' },
+      createMockActorContext()
+    );
     expect(state.value).toBe('e');
   });
 
@@ -496,7 +546,11 @@ describe('transient states (eventless transitions)', () => {
       }
     });
 
-    const state = machine.transition('a', { type: 'FOO' });
+    const state = machine.transition(
+      machine.resolveStateValue('a'),
+      { type: 'FOO' },
+      createMockActorContext()
+    );
     expect(state.value).toBe('b');
   });
 
@@ -516,7 +570,11 @@ describe('transient states (eventless transitions)', () => {
       }
     });
 
-    const state = machine.transition('a', { type: 'FOO' });
+    const state = machine.transition(
+      machine.resolveStateValue('a'),
+      { type: 'FOO' },
+      createMockActorContext()
+    );
     expect(state.value).toBe('pass');
   });
 
@@ -536,7 +594,11 @@ describe('transient states (eventless transitions)', () => {
       }
     });
 
-    const state = machine.transition('a', { type: 'FOO' });
+    const state = machine.transition(
+      machine.resolveStateValue('a'),
+      { type: 'FOO' },
+      createMockActorContext()
+    );
     expect(state.value).toBe('pass');
   });
 
@@ -742,7 +804,12 @@ describe('transient states (eventless transitions)', () => {
       }
     });
 
-    const nextState = machine.transition(undefined, { type: 'EVENT' });
+    const actorContext = createMockActorContext();
+    const nextState = machine.transition(
+      machine.getInitialState(actorContext),
+      { type: 'EVENT' },
+      actorContext
+    );
 
     expect(nextState.done).toBeTruthy();
   });

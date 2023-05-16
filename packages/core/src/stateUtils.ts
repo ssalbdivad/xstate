@@ -23,7 +23,8 @@ import {
   StateValueMap,
   RaiseActionObject,
   InitialTransitionConfig,
-  MachineContext
+  MachineContext,
+  SnapshotFrom
 } from './types.ts';
 import { cloneState, State } from './State.ts';
 import {
@@ -52,8 +53,7 @@ import {
   DelayedTransitionDefinition,
   HistoryValue,
   InitialTransitionDefinition,
-  SendActionObject,
-  StateFromMachine
+  SendActionObject
 } from '.';
 import { stopSignalType } from './actors/index.ts';
 import { ActorStatus } from './interpreter.ts';
@@ -1470,7 +1470,7 @@ export function resolveActionsAndContext<
   actions: BaseActionObject[],
   event: TEvent,
   currentState: State<TContext, TEvent, any>,
-  actorCtx: AnyActorContext
+  actorCtx: AnyActorContext | undefined
 ): {
   nextState: AnyState;
 } {
@@ -1542,7 +1542,7 @@ export function resolveActionsAndContext<
 }
 
 export function macrostep<TMachine extends AnyStateMachine>(
-  state: StateFromMachine<TMachine>,
+  state: SnapshotFrom<TMachine>,
   event: TMachine['__TEvent'],
   actorCtx: AnyActorContext
 ): {
@@ -1554,7 +1554,7 @@ export function macrostep<TMachine extends AnyStateMachine>(
   }
 
   let nextState = state;
-  const states: StateFromMachine<TMachine>[] = [];
+  const states: SnapshotFrom<TMachine>[] = [];
 
   // Handle stop event
   if (event.type === stopSignalType) {

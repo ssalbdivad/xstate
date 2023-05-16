@@ -3,8 +3,8 @@ import {
   AnyStateMachine,
   StateFrom,
   EventFrom,
-  AnyActorContext,
-  ActorBehavior
+  ActorBehavior,
+  createMockActorContext
 } from 'xstate';
 import {
   SerializedEvent,
@@ -15,20 +15,6 @@ import {
 } from './types';
 import { resolveTraversalOptions, createDefaultMachineOptions } from './graph';
 import { getAdjacencyMap } from './adjacency';
-import { createEmptyActor } from 'xstate/actors';
-
-export function createMockActorContext(): AnyActorContext {
-  const nullActor = createEmptyActor();
-  return {
-    self: nullActor,
-    logger: console.log,
-    id: 'root_test',
-    sessionId: Math.random().toString(32).slice(2),
-    defer: () => {},
-    system: nullActor,
-    stopChild: () => {}
-  };
-}
 
 export function getShortestPaths<TState, TEvent extends EventObject>(
   behavior: ActorBehavior<TEvent, TState>,
@@ -153,5 +139,5 @@ export function getMachineShortestPaths<TMachine extends AnyStateMachine>(
     createDefaultMachineOptions(machine, options)
   );
 
-  return getShortestPaths(machine, resolvedOptions) as any;
+  return getShortestPaths(machine as any, resolvedOptions);
 }

@@ -1,12 +1,28 @@
-import { ActorBehavior, EventObject } from 'xstate';
+import {
+  ActorBehavior,
+  ActorSystem,
+  EventObject,
+  createMockActorContext
+} from 'xstate';
 import { SerializedEvent, SerializedState, TraversalOptions } from './types';
 import { AdjacencyMap, resolveTraversalOptions } from './graph';
-import { createMockActorContext } from './shortestPaths';
 
-export function getAdjacencyMap<TState, TEvent extends EventObject>(
-  behavior: ActorBehavior<TEvent, TState>,
-  options: TraversalOptions<TState, TEvent>
-): AdjacencyMap<TState, TEvent> {
+export function getAdjacencyMap<
+  TEvent extends EventObject,
+  TSnapshot,
+  TInternalState = TSnapshot,
+  TPersisted = TInternalState,
+  TSystem extends ActorSystem<any> = ActorSystem<any>
+>(
+  behavior: ActorBehavior<
+    TEvent,
+    TSnapshot,
+    TInternalState,
+    TPersisted,
+    TSystem
+  >,
+  options: TraversalOptions<TInternalState, TEvent>
+): AdjacencyMap<TInternalState, TEvent> {
   const { transition } = behavior;
   const {
     serializeEvent,
@@ -19,15 +35,15 @@ export function getAdjacencyMap<TState, TEvent extends EventObject>(
   const actorContext = createMockActorContext();
   const fromState =
     customFromState ?? behavior.getInitialState(actorContext, undefined);
-  const adj: AdjacencyMap<TState, TEvent> = {};
+  const adj: AdjacencyMap<TInternalState, TEvent> = {};
 
   let iterations = 0;
   const queue: Array<{
-    nextState: TState;
+    nextState: TInternalState;
     event: TEvent | undefined;
-    prevState: TState | undefined;
+    prevState: TInternalState | undefined;
   }> = [{ nextState: fromState, event: undefined, prevState: undefined }];
-  const stateMap = new Map<SerializedState, TState>();
+  const stateMap = new Map<SerializedState, TInternalState>();
 
   while (queue.length) {
     const { nextState: state, event, prevState } = queue.shift()!;

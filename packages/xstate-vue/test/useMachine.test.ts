@@ -1,7 +1,12 @@
 import { render, fireEvent, waitFor } from '@testing-library/vue';
 import UseMachine from './UseMachine.vue';
 import UseMachineNoExtraOptions from './UseMachine-no-extra-options.vue';
-import { createMachine, assign, doneInvoke } from 'xstate';
+import {
+  createMachine,
+  assign,
+  doneInvoke,
+  createMockActorContext
+} from 'xstate';
 
 describe('useMachine composition function', () => {
   const context = {
@@ -36,8 +41,9 @@ describe('useMachine composition function', () => {
 
   const persistedFetchState = fetchMachine.getPersistedState(
     fetchMachine.transition(
-      'loading',
-      doneInvoke('fetchData', 'persisted data')
+      fetchMachine.resolveStateValue('loading'),
+      doneInvoke('fetchData', 'persisted data'),
+      createMockActorContext()
     )
   );
 

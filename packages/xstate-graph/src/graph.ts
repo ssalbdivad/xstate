@@ -5,7 +5,8 @@ import {
   StateFrom,
   EventFrom,
   StateMachine,
-  AnyActorBehavior
+  AnyActorBehavior,
+  createMockActorContext
 } from 'xstate';
 import type {
   SerializedEvent,
@@ -54,9 +55,6 @@ export function getChildren(stateNode: AnyStateNode): AnyStateNode[] {
 }
 
 export function serializeMachineState(state: AnyState): SerializedState {
-  if (!state) {
-    debugger;
-  }
   const { value, context } = state;
   return JSON.stringify({
     value,
@@ -96,7 +94,9 @@ export function createDefaultMachineOptions<TMachine extends AnyStateMachine>(
         })
       ) as any[];
     },
-    fromState: machine.initialState as StateFrom<TMachine>,
+    fromState: machine.getInitialState(
+      createMockActorContext()
+    ) as StateFrom<TMachine>,
     ...otherOptions
   };
 

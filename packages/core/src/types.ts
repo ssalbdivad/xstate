@@ -129,7 +129,13 @@ export type Spawner = <T extends ActorBehavior<any, any> | string>( // TODO: rea
     id: string;
     input: any;
   }>
-) => T extends ActorBehavior<infer TActorEvent, infer TActorEmitted>
+) => T extends ActorBehavior<
+  infer TActorEvent,
+  infer TActorEmitted,
+  infer _,
+  infer __,
+  infer ___
+>
   ? ActorRef<TActorEvent, TActorEmitted>
   : ActorRef<any, any>; // TODO: narrow this to behaviors from machine
 
@@ -1819,7 +1825,15 @@ export type SnapshotFrom<T> = ReturnTypeOrValue<T> extends infer R
   : never;
 
 export type EventFromBehavior<TBehavior extends ActorBehavior<any, any>> =
-  TBehavior extends ActorBehavior<infer TEvent, infer _> ? TEvent : never;
+  TBehavior extends ActorBehavior<
+    infer TEvent,
+    infer _,
+    infer __,
+    infer ___,
+    infer ____
+  >
+    ? TEvent
+    : never;
 
 export type PersistedStateFrom<TBehavior extends ActorBehavior<any, any>> =
   TBehavior extends ActorBehavior<
@@ -1894,9 +1908,6 @@ export type StateValueFrom<TMachine extends AnyStateMachine> = Parameters<
 export type TagsFrom<TMachine extends AnyStateMachine> = Parameters<
   StateFrom<TMachine>['hasTag']
 >[0];
-
-export type StateFromMachine<TMachine extends AnyStateMachine> =
-  TMachine['initialState'];
 
 export interface ActorSystemInfo {
   actors: Record<string, AnyActorRef>;

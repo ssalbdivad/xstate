@@ -6,8 +6,10 @@ import {
   ActorRefFrom,
   assign,
   createMachine,
+  createMockActorContext,
   DoneEventObject,
   doneInvoke,
+  interpret,
   Interpreter,
   PersistedMachineState,
   raise,
@@ -57,10 +59,14 @@ describeEachReactMode('useActor (%s)', ({ suiteKey, render }) => {
     }
   });
 
-  const successFetchState = fetchMachine.transition('loading', {
-    type: 'done.invoke.fetchData',
-    output: 'persisted data'
-  });
+  const successFetchState = fetchMachine.transition(
+    fetchMachine.resolveStateValue('loading'),
+    {
+      type: 'done.invoke.fetchData',
+      output: 'persisted data'
+    },
+    createMockActorContext()
+  );
 
   const persistedSuccessFetchState =
     fetchMachine.getPersistedState(successFetchState);
@@ -867,7 +873,9 @@ describeEachReactMode('useActor (%s)', ({ suiteKey, render }) => {
       }
     });
 
-    const persistedState = JSON.stringify(testMachine.initialState);
+    const actorRef = interpret(testMachine).start();
+    const persistedState = JSON.stringify(actorRef.getPersistedState());
+    actorRef.stop();
 
     let currentState: StateFrom<typeof testMachine>;
 

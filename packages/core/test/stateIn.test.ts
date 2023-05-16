@@ -1,4 +1,4 @@
-import { createMachine } from '../src/index';
+import { createMachine, createMockActorContext } from '../src/index';
 import { stateIn } from '../src/guards';
 
 const machine = createMachine({
@@ -95,7 +95,7 @@ describe('transition "in" check', () => {
   it('should transition if string state path matches current state value', () => {
     expect(
       machine.transition(
-        {
+        machine.resolveStateValue({
           a: 'a1',
           b: {
             b2: {
@@ -103,8 +103,9 @@ describe('transition "in" check', () => {
               bar: 'bar1'
             }
           }
-        },
-        { type: 'EVENT2' }
+        }),
+        { type: 'EVENT2' },
+        createMockActorContext()
       ).value
     ).toEqual({
       a: 'a2',
@@ -120,7 +121,7 @@ describe('transition "in" check', () => {
   it('should transition if state node ID matches current state value', () => {
     expect(
       machine.transition(
-        {
+        machine.resolveStateValue({
           a: 'a1',
           b: {
             b2: {
@@ -128,8 +129,9 @@ describe('transition "in" check', () => {
               bar: 'bar1'
             }
           }
-        },
-        { type: 'EVENT3' }
+        }),
+        { type: 'EVENT3' },
+        createMockActorContext()
       ).value
     ).toEqual({
       a: 'a2',
@@ -144,7 +146,11 @@ describe('transition "in" check', () => {
 
   it('should not transition if string state path does not match current state value', () => {
     expect(
-      machine.transition({ a: 'a1', b: 'b1' }, { type: 'EVENT1' }).value
+      machine.transition(
+        machine.resolveStateValue({ a: 'a1', b: 'b1' }),
+        { type: 'EVENT1' },
+        createMockActorContext()
+      ).value
     ).toEqual({
       a: 'a1',
       b: 'b1'
@@ -154,7 +160,7 @@ describe('transition "in" check', () => {
   it('should not transition if state value matches current state value', () => {
     expect(
       machine.transition(
-        {
+        machine.resolveStateValue({
           a: 'a1',
           b: {
             b2: {
@@ -162,8 +168,9 @@ describe('transition "in" check', () => {
               bar: 'bar1'
             }
           }
-        },
-        { type: 'EVENT2' }
+        }),
+        { type: 'EVENT2' },
+        createMockActorContext()
       ).value
     ).toEqual({
       a: 'a2',
@@ -179,8 +186,12 @@ describe('transition "in" check', () => {
   it('matching should be relative to grandparent (match)', () => {
     expect(
       machine.transition(
-        { a: 'a1', b: { b2: { foo: 'foo1', bar: 'bar1' } } },
-        { type: 'EVENT_DEEP' }
+        machine.resolveStateValue({
+          a: 'a1',
+          b: { b2: { foo: 'foo1', bar: 'bar1' } }
+        }),
+        { type: 'EVENT_DEEP' },
+        createMockActorContext()
       ).value
     ).toEqual({
       a: 'a1',
@@ -196,8 +207,12 @@ describe('transition "in" check', () => {
   it('matching should be relative to grandparent (no match)', () => {
     expect(
       machine.transition(
-        { a: 'a1', b: { b2: { foo: 'foo1', bar: 'bar2' } } },
-        { type: 'EVENT_DEEP' }
+        machine.resolveStateValue({
+          a: 'a1',
+          b: { b2: { foo: 'foo1', bar: 'bar2' } }
+        }),
+        { type: 'EVENT_DEEP' },
+        createMockActorContext()
       ).value
     ).toEqual({
       a: 'a1',
@@ -212,22 +227,25 @@ describe('transition "in" check', () => {
 
   it('should work to forbid events', () => {
     const walkState = lightMachine.transition(
-      { red: 'walk' },
-      { type: 'TIMER' }
+      lightMachine.resolveStateValue({ red: 'walk' }),
+      { type: 'TIMER' },
+      createMockActorContext()
     );
 
     expect(walkState.value).toEqual({ red: 'walk' });
 
     const waitState = lightMachine.transition(
-      { red: 'wait' },
-      { type: 'TIMER' }
+      lightMachine.resolveStateValue({ red: 'wait' }),
+      { type: 'TIMER' },
+      createMockActorContext()
     );
 
     expect(waitState.value).toEqual({ red: 'wait' });
 
     const stopState = lightMachine.transition(
-      { red: 'stop' },
-      { type: 'TIMER' }
+      lightMachine.resolveStateValue({ red: 'stop' }),
+      { type: 'TIMER' },
+      createMockActorContext()
     );
 
     expect(stopState.value).toEqual('green');

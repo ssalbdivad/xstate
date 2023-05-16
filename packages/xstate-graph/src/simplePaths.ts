@@ -3,7 +3,8 @@ import {
   AnyStateMachine,
   StateFrom,
   EventFrom,
-  ActorBehavior
+  ActorBehavior,
+  createMockActorContext
 } from 'xstate';
 import {
   SerializedEvent,
@@ -14,7 +15,6 @@ import {
 } from './types';
 import { resolveTraversalOptions, createDefaultMachineOptions } from './graph';
 import { getAdjacencyMap } from './adjacency';
-import { createMockActorContext } from './shortestPaths';
 
 export function getMachineSimplePaths<TMachine extends AnyStateMachine>(
   machine: TMachine,
@@ -25,7 +25,7 @@ export function getMachineSimplePaths<TMachine extends AnyStateMachine>(
     createDefaultMachineOptions(machine)
   );
 
-  return getSimplePaths(machine, resolvedOptions);
+  return getSimplePaths(machine as any, resolvedOptions);
 }
 
 export function getSimplePaths<TState, TEvent extends EventObject>(

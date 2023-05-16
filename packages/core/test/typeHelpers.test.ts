@@ -9,7 +9,8 @@ import {
   StateValueFrom,
   ActorBehavior,
   ActorRefFrom,
-  TagsFrom
+  TagsFrom,
+  createMockActorContext
 } from '../src/index.ts';
 import { TypegenMeta } from '../src/typegenTypes';
 
@@ -328,7 +329,7 @@ describe('SnapshotFrom', () => {
 
     function acceptState(_state: SnapshotFrom<typeof machine>) {}
 
-    acceptState(machine.initialState);
+    acceptState(machine.getInitialState(createMockActorContext()));
     // @ts-expect-error
     acceptState("isn't any");
   });
@@ -342,7 +343,7 @@ describe('SnapshotFrom', () => {
 
     function acceptState(_state: SnapshotFrom<typeof machine>) {}
 
-    acceptState(machine.initialState);
+    acceptState(machine.getInitialState(createMockActorContext()));
     // @ts-expect-error
     acceptState("isn't any");
   });

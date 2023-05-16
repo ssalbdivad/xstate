@@ -2,10 +2,14 @@ import { render, fireEvent } from '@testing-library/svelte';
 import UseMachine from './UseMachine.svelte';
 import UseMachineNonPersistentSubcription from './UseMachineNonPersistentSubcription.svelte';
 import { fetchMachine } from './fetchMachine';
-import { doneInvoke } from 'xstate';
+import { createMockActorContext, doneInvoke } from 'xstate';
 
 const persistedFetchState = fetchMachine.getPersistedState(
-  fetchMachine.transition('loading', doneInvoke('fetchData', 'persisted data'))
+  fetchMachine.transition(
+    fetchMachine.resolveStateValue('loading'),
+    doneInvoke('fetchData', 'persisted data'),
+    createMockActorContext()
+  )
 );
 
 const persistedFetchStateConfig = JSON.parse(

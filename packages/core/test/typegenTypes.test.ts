@@ -304,7 +304,7 @@ describe('typegen types', () => {
       }
     });
 
-    machine.initialState.matches('a');
+    interpret(machine).getSnapshot().matches('a');
   });
 
   it('should allow valid object `matches`', () => {
@@ -321,7 +321,7 @@ describe('typegen types', () => {
       }
     });
 
-    machine.initialState.matches({ a: 'c' });
+    interpret(machine).getSnapshot().matches({ a: 'c' });
   });
 
   it('should not allow invalid string `matches`', () => {
@@ -380,7 +380,7 @@ describe('typegen types', () => {
       }
     });
 
-    machine.initialState.hasTag('a');
+    interpret(machine).getSnapshot().hasTag('a');
   });
 
   it('should not allow an invalid tag with `hasTag`', () => {
@@ -1035,9 +1035,11 @@ describe('typegen types', () => {
       }
     });
 
-    if (machine.initialState.matches('a')) {
+    const state = interpret(machine).getSnapshot();
+
+    if (state.matches('a')) {
       // @ts-expect-error
-      machine.initialState.context.val;
+      state.context.val;
     }
   });
 
@@ -1055,7 +1057,7 @@ describe('typegen types', () => {
       }
     });
 
-    const state = machine.initialState;
+    const state = interpret(machine).getSnapshot();
 
     if (state.matches('a') && state.matches('a.b')) {
       ((_accept: string) => {})(state.context.foo);

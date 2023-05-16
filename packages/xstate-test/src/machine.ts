@@ -95,7 +95,7 @@ export function createTestModel<TMachine extends AnyStateMachine>(
   const { events: getEvents, ...otherOptions } = options ?? {};
 
   const testModel = new TestModel<StateFrom<TMachine>, EventFrom<TMachine>>(
-    machine,
+    machine as any,
     {
       serializeState: (state, event, prevState) => {
         // Only consider the `state` if `serializeTransition()` is opted out (empty string)

@@ -1,9 +1,8 @@
 import { toActionObject } from '../src/actions.ts';
-import { createEmptyActor } from '../src/actors/index.ts';
 import {
-  AnyActorContext,
   AnyState,
   AnyStateMachine,
+  createMockActorContext,
   matchesState,
   StateNode,
   StateValue
@@ -14,11 +13,19 @@ export function testMultiTransition(
   fromState: string,
   eventTypes: string
 ): AnyState {
+  const actorContext = createMockActorContext();
   const computeNext = (state: AnyState | string, eventType: string) => {
-    if (typeof state === 'string' && state[0] === '{') {
-      state = JSON.parse(state);
+    if (typeof state === 'string') {
+      state =
+        state[0] === '{'
+          ? machine.resolveStateValue(JSON.parse(state))
+          : machine.resolveStateValue(state);
     }
-    const nextState = machine.transition(state, { type: eventType });
+    const nextState = machine.transition(
+      state,
+      { type: eventType },
+      actorContext
+    );
     return nextState;
   };
 
@@ -98,18 +105,5 @@ export function trackEntries(machine: AnyStateMachine) {
     const flushed = logs;
     logs = [];
     return flushed;
-  };
-}
-
-export function createMockActorContext(): AnyActorContext {
-  const nullActor = createEmptyActor();
-  return {
-    self: nullActor,
-    logger: console.log,
-    id: 'root_test',
-    sessionId: Math.random().toString(32).slice(2),
-    defer: () => {},
-    system: nullActor,
-    stopChild: () => {}
   };
 }
