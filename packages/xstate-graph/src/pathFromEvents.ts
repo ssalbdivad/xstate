@@ -1,23 +1,11 @@
-import {
-  ActorBehavior,
-  ActorContext,
-  AnyStateMachine,
-  EventObject
-} from 'xstate';
+import { ActorBehavior, AnyStateMachine, EventObject } from 'xstate';
 import { getAdjacencyMap } from './adjacency';
-import {
-  SerializedState,
-  SimpleBehavior,
-  StatePath,
-  Steps,
-  TraversalOptions
-} from './types';
+import { SerializedState, StatePath, Steps, TraversalOptions } from './types';
 import {
   resolveTraversalOptions,
   createDefaultMachineOptions,
   createDefaultBehaviorOptions
 } from './graph';
-import { create } from 'domain';
 import { createMockActorContext } from './shortestPaths';
 
 function isMachine(value: any): value is AnyStateMachine {

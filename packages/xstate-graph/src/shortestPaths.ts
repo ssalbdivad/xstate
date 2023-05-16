@@ -9,14 +9,12 @@ import {
 import {
   SerializedEvent,
   SerializedState,
-  SimpleBehavior,
   StatePath,
   StatePlanMap,
   TraversalOptions
 } from './types';
 import { resolveTraversalOptions, createDefaultMachineOptions } from './graph';
 import { getAdjacencyMap } from './adjacency';
-import { machineToBehavior } from './machineToBehavior';
 import { createEmptyActor } from 'xstate/actors';
 
 export function createMockActorContext(): AnyActorContext {
@@ -155,5 +153,5 @@ export function getMachineShortestPaths<TMachine extends AnyStateMachine>(
     createDefaultMachineOptions(machine, options)
   );
 
-  return getShortestPaths(machineToBehavior(machine), resolvedOptions);
+  return getShortestPaths(machine, resolvedOptions) as any;
 }
