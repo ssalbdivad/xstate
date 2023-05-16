@@ -1,4 +1,8 @@
-import { interpret, createMachine } from '../src/index.ts';
+import {
+  interpret,
+  createMachine,
+  createMockActorContext
+} from '../src/index.ts';
 
 const config = {
   initial: 'a',
@@ -38,18 +42,23 @@ const deepParallelMachine = createMachine({
 
 describe('Initial states', () => {
   it('should return the correct initial state', () => {
-    expect(deepMachine.initialState.value).toEqual({ a: { b: 'c' } });
+    const actorContext = createMockActorContext();
+    expect(deepMachine.getInitialState(actorContext).value).toEqual({
+      a: { b: 'c' }
+    });
   });
 
   it('should return the correct initial state (parallel)', () => {
-    expect(parallelDeepMachine.initialState.value).toEqual({
+    const actorContext = createMockActorContext();
+    expect(parallelDeepMachine.getInitialState(actorContext).value).toEqual({
       foo: { a: { b: 'c' } },
       bar: { a: { b: 'c' } }
     });
   });
 
   it('should return the correct initial state (deep parallel)', () => {
-    expect(deepParallelMachine.initialState.value).toEqual({
+    const actorContext = createMockActorContext();
+    expect(deepParallelMachine.getInitialState(actorContext).value).toEqual({
       one: {
         foo: { a: { b: 'c' } },
         bar: { a: { b: 'c' } }

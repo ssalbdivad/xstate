@@ -167,7 +167,7 @@ describe('interpreter', () => {
         }
       });
 
-      const bState = machine.initialState;
+      const bState = machine.getInitialState(createMockActorContext());
 
       expect(bState.value).toEqual('b');
 

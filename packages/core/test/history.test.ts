@@ -1,4 +1,4 @@
-import { interpret, createMachine } from '../src/index';
+import { interpret, createMachine, createMockActorContext } from '../src/index';
 
 describe('history states', () => {
   const historyMachine = createMachine({
@@ -34,43 +34,74 @@ describe('history states', () => {
   });
 
   it('should go to the most recently visited state', () => {
-    const onSecondState = historyMachine.transition('on', { type: 'SWITCH' });
-    const offState = historyMachine.transition(onSecondState, {
-      type: 'POWER'
-    });
+    const actorContext = createMockActorContext();
+    const onSecondState = historyMachine.transition(
+      historyMachine.resolveStateValue('on'),
+      { type: 'SWITCH' },
+      actorContext
+    );
+    const offState = historyMachine.transition(
+      onSecondState,
+      {
+        type: 'POWER'
+      },
+      actorContext
+    );
 
     expect(
-      historyMachine.transition(offState, { type: 'POWER' }).value
+      historyMachine.transition(offState, { type: 'POWER' }, actorContext).value
     ).toEqual({
       on: 'second'
     });
   });
 
   it('should go to the most recently visited state (explicit)', () => {
-    const onSecondState = historyMachine.transition('on', { type: 'SWITCH' });
-    const offState = historyMachine.transition(onSecondState, {
-      type: 'H_POWER'
-    });
+    const actorContext = createMockActorContext();
+    const onSecondState = historyMachine.transition(
+      historyMachine.resolveStateValue('on'),
+      { type: 'SWITCH' },
+      actorContext
+    );
+    const offState = historyMachine.transition(
+      onSecondState,
+      {
+        type: 'H_POWER'
+      },
+      actorContext
+    );
 
     expect(
-      historyMachine.transition(offState, { type: 'H_POWER' }).value
+      historyMachine.transition(offState, { type: 'H_POWER' }, actorContext)
+        .value
     ).toEqual({
       on: 'second'
     });
   });
 
   it('should go to the initial state when no history present', () => {
-    expect(historyMachine.transition('off', { type: 'POWER' }).value).toEqual({
+    const actorContext = createMockActorContext();
+    expect(
+      historyMachine.transition(
+        historyMachine.resolveStateValue('off'),
+        { type: 'POWER' },
+        actorContext
+      ).value
+    ).toEqual({
       on: 'first'
     });
   });
 
   it('should go to the initial state when no history present (explicit)', () => {
-    expect(historyMachine.transition('off', { type: 'H_POWER' }).value).toEqual(
-      {
-        on: 'first'
-      }
-    );
+    const actorContext = createMockActorContext();
+    expect(
+      historyMachine.transition(
+        historyMachine.resolveStateValue('off'),
+        { type: 'H_POWER' },
+        actorContext
+      ).value
+    ).toEqual({
+      on: 'first'
+    });
   });
 
   it('should go to the most recently visited state by a transient transition', () => {
@@ -640,19 +671,35 @@ describe('multistage history states', () => {
   });
 
   it('should go to the most recently visited state', () => {
-    const onTurboState = pcWithTurboButtonMachine.transition('running', {
-      type: 'SWITCH_TURBO'
-    });
-    const offState = pcWithTurboButtonMachine.transition(onTurboState, {
-      type: 'POWER'
-    });
-    const loadingState = pcWithTurboButtonMachine.transition(offState, {
-      type: 'POWER'
-    });
+    const actorContext = createMockActorContext();
+    const onTurboState = pcWithTurboButtonMachine.transition(
+      pcWithTurboButtonMachine.resolveStateValue('running'),
+      {
+        type: 'SWITCH_TURBO'
+      },
+      actorContext
+    );
+    const offState = pcWithTurboButtonMachine.transition(
+      onTurboState,
+      {
+        type: 'POWER'
+      },
+      actorContext
+    );
+    const loadingState = pcWithTurboButtonMachine.transition(
+      offState,
+      {
+        type: 'POWER'
+      },
+      actorContext
+    );
 
     expect(
-      pcWithTurboButtonMachine.transition(loadingState, { type: 'STARTED' })
-        .value
+      pcWithTurboButtonMachine.transition(
+        loadingState,
+        { type: 'STARTED' },
+        actorContext
+      ).value
     ).toEqual({ running: 'turbo' });
   });
 });

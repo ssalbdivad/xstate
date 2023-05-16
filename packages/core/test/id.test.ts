@@ -1,5 +1,5 @@
 import { testAll } from './utils';
-import { createMachine } from '../src/index.ts';
+import { createMachine, createMockActorContext } from '../src/index.ts';
 
 const idMachine = createMachine({
   initial: 'A',
@@ -96,7 +96,13 @@ describe('State node IDs', () => {
       }
     });
 
-    expect(brokenMachine.transition('foo', { type: 'ACTION' }).value).toEqual({
+    expect(
+      brokenMachine.transition(
+        brokenMachine.resolveStateValue('foo'),
+        { type: 'ACTION' },
+        createMockActorContext()
+      ).value
+    ).toEqual({
       bar: { qux: 'quux' }
     });
   });
