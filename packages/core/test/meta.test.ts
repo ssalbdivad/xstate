@@ -1,4 +1,8 @@
-import { createMachine, interpret } from '../src/index';
+import {
+  createMachine,
+  createMockActorContext,
+  interpret
+} from '../src/index.ts';
 
 describe('state meta data', () => {
   const pedestrianStates = {
@@ -73,7 +77,12 @@ describe('state meta data', () => {
   });
 
   it('states should aggregate meta data', () => {
-    const yellowState = lightMachine.transition('green', { type: 'TIMER' });
+    const actorContext = createMockActorContext();
+    const yellowState = lightMachine.transition(
+      lightMachine.resolveStateValue('green'),
+      { type: 'TIMER' },
+      actorContext
+    );
     expect(yellowState.meta).toEqual({
       'light.yellow': {
         yellowData: 'yellow data'
@@ -84,7 +93,14 @@ describe('state meta data', () => {
   });
 
   it('states should aggregate meta data (deep)', () => {
-    expect(lightMachine.transition('yellow', { type: 'TIMER' }).meta).toEqual({
+    const actorContext = createMockActorContext();
+    expect(
+      lightMachine.transition(
+        lightMachine.resolveStateValue('yellow'),
+        { type: 'TIMER' },
+        actorContext
+      ).meta
+    ).toEqual({
       'light.red': {
         redData: {
           nested: {
@@ -150,7 +166,12 @@ describe('transition meta data', () => {
       }
     });
 
-    const nextState = machine.transition(undefined, { type: 'EVENT' });
+    const actorContext = createMockActorContext();
+    const nextState = machine.transition(
+      machine.getInitialState(actorContext),
+      { type: 'EVENT' },
+      actorContext
+    );
 
     expect(nextState.transitions.map((t) => t.meta)).toMatchInlineSnapshot(`
       [

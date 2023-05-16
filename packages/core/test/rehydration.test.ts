@@ -12,7 +12,9 @@ describe('rehydration', () => {
         }
       });
 
-      const persistedState = JSON.stringify(machine.initialState);
+      const actorRef = interpret(machine).start();
+      const persistedState = JSON.stringify(actorRef.getPersistedState());
+      actorRef.stop();
       const restoredState = machine.createState(JSON.parse(persistedState));
 
       const service = interpret(machine, { state: restoredState }).start();
@@ -32,7 +34,9 @@ describe('rehydration', () => {
         }
       });
 
-      const persistedState = JSON.stringify(machine.initialState);
+      const actorRef = interpret(machine).start();
+      const persistedState = JSON.stringify(actorRef.getPersistedState());
+      actorRef.stop();
       const restoredState = machine.createState(JSON.parse(persistedState));
 
       interpret(machine, { state: restoredState }).start().stop();

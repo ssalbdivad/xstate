@@ -1,7 +1,12 @@
-import { createMachine, interpret, StateValue } from '../src/index.ts';
+import {
+  createMachine,
+  interpret,
+  StateValue,
+  createMockActorContext
+} from '../src/index.ts';
 import { assign } from '../src/actions/assign';
 import { raise } from '../src/actions/raise';
-import { createMockActorContext, testMultiTransition } from './utils';
+import { testMultiTransition } from './utils';
 
 const composerMachine = createMachine({
   initial: 'ReadOnly',

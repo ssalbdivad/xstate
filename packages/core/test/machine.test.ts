@@ -1,6 +1,10 @@
-import { interpret, createMachine, assign } from '../src/index';
-import { State } from '../src/State';
-import { createMockActorContext } from './utils';
+import {
+  interpret,
+  createMachine,
+  assign,
+  createMockActorContext
+} from '../src/index.ts';
+import { State } from '../src/State.ts';
 
 const pedestrianStates = {
   initial: 'walk',
@@ -161,15 +165,20 @@ describe('machine', () => {
         service.start();
       }).toThrowErrorMatchingInlineSnapshot(`"new entry"`);
 
+      const actorContext = createMockActorContext();
       expect(
-        differentMachine.transition('foo', { type: 'EVENT' }).value
+        differentMachine.transition(
+          differentMachine.resolveStateValue('foo'),
+          { type: 'EVENT' },
+          actorContext
+        ).value
       ).toEqual('bar');
     });
 
     it('should not override context if not defined', () => {
       const differentMachine = configMachine.provide({});
-
-      expect(differentMachine.initialState.context).toEqual(
+      const actorContext = createMockActorContext();
+      expect(differentMachine.getInitialState(actorContext).context).toEqual(
         configMachine.getContext()
       );
     });
@@ -236,15 +245,17 @@ describe('machine', () => {
       const testMachine1 = createMachine(testMachineConfig);
       const testMachine2 = createMachine(testMachineConfig);
 
-      expect(testMachine1.getInitialState().context).not.toBe(
-        testMachine2.initialState.context
+      const actorContext = createMockActorContext();
+
+      expect(testMachine1.getInitialState(actorContext).context).not.toBe(
+        testMachine2.getInitialState(actorContext).context
       );
 
-      expect(testMachine1.getInitialState().context).toEqual({
+      expect(testMachine1.getInitialState(actorContext).context).toEqual({
         foo: { bar: 'baz' }
       });
 
-      expect(testMachine2.getInitialState().context).toEqual({
+      expect(testMachine2.getInitialState(actorContext).context).toEqual({
         foo: { bar: 'baz' }
       });
     });
@@ -340,7 +351,12 @@ describe('machine', () => {
         }
       });
 
-      const barState = machine.transition(undefined, { type: 'NEXT' });
+      const actorContext = createMockActorContext();
+      const barState = machine.transition(
+        machine.getInitialState(actorContext),
+        { type: 'NEXT' },
+        actorContext
+      );
 
       const jsonBarState = JSON.parse(JSON.stringify(barState));
 
@@ -360,7 +376,12 @@ describe('machine', () => {
         }
       });
 
-      const nextState = machine.transition(undefined, { type: 'NEXT' });
+      const actorContext = createMockActorContext();
+      const nextState = machine.transition(
+        machine.getInitialState(actorContext),
+        { type: 'NEXT' },
+        actorContext
+      );
 
       const persistedState = machine.getPersistedState(nextState);
 
@@ -450,11 +471,16 @@ describe('machine', () => {
         }
       });
 
-      const state = testMachine.initialState;
+      const actorContext = createMockActorContext();
+      const state = testMachine.getInitialState(actorContext);
 
       expect(state.value).toEqual({});
 
-      const nextState = testMachine.transition(state, { type: 'INC' });
+      const nextState = testMachine.transition(
+        state,
+        { type: 'INC' },
+        actorContext
+      );
 
       expect(nextState.context.value).toEqual(43);
     });

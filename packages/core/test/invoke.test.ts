@@ -23,6 +23,7 @@ import {
   StateValue,
   assign,
   createMachine,
+  createMockActorContext,
   interpret,
   sendParent
 } from '../src/index.ts';
@@ -1714,9 +1715,11 @@ describe('invoke', () => {
     });
 
     it('should be able to be stringified', () => {
+      const actorContext = createMockActorContext();
       const waitingState = fetcherMachine.transition(
-        fetcherMachine.initialState,
-        { type: 'GO_TO_WAITING' }
+        fetcherMachine.getInitialState(actorContext),
+        { type: 'GO_TO_WAITING' },
+        actorContext
       );
 
       expect(() => {
@@ -2913,8 +2916,12 @@ describe('invoke', () => {
         }
       );
 
+      const actorContext = createMockActorContext();
+
       expect(
-        machine.initialState.children['machine.a:invocation[0]']
+        machine.getInitialState(actorContext).children[
+          'machine.a:invocation[0]'
+        ]
       ).toBeDefined();
     }
   );

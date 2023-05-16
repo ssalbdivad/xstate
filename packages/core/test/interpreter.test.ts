@@ -13,7 +13,8 @@ import {
   cancel,
   raise,
   stop,
-  log
+  log,
+  createMockActorContext
 } from '../src/index.ts';
 import { State } from '../src/State';
 import { isObservable } from '../src/utils';
@@ -55,7 +56,7 @@ describe('interpreter', () => {
       const service = interpret(idMachine);
 
       expect(service.getSnapshot().value).toEqual(
-        idMachine.getInitialState().value
+        idMachine.getInitialState(createMockActorContext()).value
       );
     });
 
@@ -132,10 +133,13 @@ describe('interpreter', () => {
         }
       });
 
-      const currentState = 'green';
-      const nextState = lightMachine.transition(currentState, {
-        type: 'TIMER'
-      });
+      const nextState = lightMachine.transition(
+        lightMachine.resolveStateValue('green'),
+        {
+          type: 'TIMER'
+        },
+        createMockActorContext()
+      );
 
       // saves state and recreate it
       const recreated = JSON.parse(JSON.stringify(nextState));
@@ -595,10 +599,13 @@ describe('interpreter', () => {
         }
       );
 
-      const activeState = toggleMachine.transition(toggleMachine.initialState, {
-        type: 'TOGGLE'
-      });
-      const bState = toggleMachine.transition(activeState, { type: 'SWITCH' });
+      const actorRef = interpret(toggleMachine).start();
+      actorRef.send({ type: 'TOGGLE' });
+      actorRef.send({ type: 'SWITCH' });
+
+      const bState = actorRef.getPersistedState();
+
+      actorRef.stop();
 
       interpret(toggleMachine, { state: bState }).start();
 
