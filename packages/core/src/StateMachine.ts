@@ -25,7 +25,7 @@ import type {
 } from './typegenTypes.ts';
 import type {
   ActorContext,
-  ActorBehavior,
+  ActorLogic,
   EventObject,
   InternalMachineImplementations,
   InvokeActionObject,
@@ -72,7 +72,7 @@ export class StateMachine<
     TActors
   >
 > implements
-    ActorBehavior<
+    ActorLogic<
       TEvent,
       State<TContext, TEvent, TAction, TActors, TResolvedTypesMeta>,
       State<TContext, TEvent, TAction, TActors, TResolvedTypesMeta>,
@@ -463,17 +463,17 @@ export class StateMachine<
       const childState = actorData.state;
       const src = actorData.src;
 
-      const behavior = src
+      const logic = src
         ? resolveReferencedActor(this.options.actors[src])?.src
         : undefined;
 
-      if (!behavior) {
+      if (!logic) {
         return;
       }
 
-      const actorState = behavior.restoreState?.(childState, _actorCtx);
+      const actorState = logic.restoreState?.(childState, _actorCtx);
 
-      const actorRef = interpret(behavior, {
+      const actorRef = interpret(logic, {
         id: actorId,
         state: actorState
       });

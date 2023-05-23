@@ -42,19 +42,19 @@ describe('testModel.testPaths(...)', () => {
       })
     );
 
-    const paths = testModel.getPaths((behavior, options) => {
+    const paths = testModel.getPaths((logic, options) => {
       const events =
         typeof options.events === 'function'
-          ? options.events(behavior.initialState)
+          ? options.events(logic.initialState)
           : options.events ?? [];
 
-      const nextState = behavior.transition(behavior.initialState, events[0]);
+      const nextState = logic.transition(logic.initialState, events[0]);
       return [
         {
           state: nextState,
           steps: [
             {
-              state: behavior.initialState,
+              state: logic.initialState,
               event: events[0]
             }
           ],

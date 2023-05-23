@@ -121,18 +121,18 @@ export interface ActionMeta<
 }
 
 // TODO: do not accept machines without all implementations
-// we should also accept a raw machine as a behavior here
-// or just make machine a behavior
-export type Spawner = <T extends ActorBehavior<any, any> | string>( // TODO: read string from machine behavior keys
-  behavior: T,
+// we should also accept a raw machine as actor logic here
+// or just make machine actor logic
+export type Spawner = <T extends ActorLogic<any, any> | string>( // TODO: read string from machine logic keys
+  logic: T,
   options?: Partial<{
     id: string;
     systemId?: string;
     input: any;
   }>
-) => T extends ActorBehavior<infer TActorEvent, infer TActorEmitted>
+) => T extends ActorLogic<infer TActorEvent, infer TActorEmitted>
   ? ActorRef<TActorEvent, TActorEmitted>
-  : ActorRef<any, any>; // TODO: narrow this to behaviors from machine
+  : ActorRef<any, any>; // TODO: narrow this to logic from machine
 
 export interface AssignMeta<
   TExpressionEvent extends EventObject,
@@ -373,10 +373,10 @@ export type InvokeCallback<
   { input }: { input: any }
 ) => (() => void) | Promise<any> | void;
 
-export type ActorBehaviorCreator<
+export type ActorLogicCreator<
   TContext extends MachineContext,
   TEvent extends EventObject,
-  TActorBehavior extends AnyActorBehavior = AnyActorBehavior
+  TActorLogic extends AnyActorLogic = AnyActorLogic
 > = (
   context: TContext,
   event: TEvent,
@@ -388,7 +388,7 @@ export type ActorBehaviorCreator<
     meta: MetaObject | undefined;
     input: any;
   }
-) => TActorBehavior;
+) => TActorLogic;
 
 export interface InvokeMeta {
   src: string;
@@ -403,7 +403,7 @@ export interface InvokeDefinition<
 
   systemId: string | undefined;
   /**
-   * The source of the actor's behavior to be invoked
+   * The source of the actor logic to be invoked
    */
   src: string;
 
@@ -538,7 +538,7 @@ export type InvokeConfig<
       /**
        * The source of the machine to be invoked, or the machine itself.
        */
-      src: TSrc | ActorBehavior<any, any>; // TODO: fix types
+      src: TSrc | ActorLogic<any, any>; // TODO: fix types
 
       input?: Mapper<TContext, TEvent, TActors['input']> | TActors['input'];
       /**
@@ -583,7 +583,7 @@ export type InvokeConfig<
       /**
        * The source of the machine to be invoked, or the machine itself.
        */
-      src: ActorBehavior<any, any>; // TODO: fix types
+      src: ActorLogic<any, any>; // TODO: fix types
 
       input?: Mapper<TContext, TEvent, any> | any;
       /**
@@ -843,8 +843,8 @@ export interface MachineImplementationsSimplified<
   actions: ActionFunctionMap<TContext, TEvent, TAction>;
   actors: Record<
     string,
-    | AnyActorBehavior
-    | { src: AnyActorBehavior; input: Mapper<TContext, TEvent, any> | any }
+    | AnyActorLogic
+    | { src: AnyActorLogic; input: Mapper<TContext, TEvent, any> | any }
   >;
   delays: DelayFunctionMap<TContext, TEvent>;
 }
@@ -919,9 +919,9 @@ type MachineImplementationsActors<
 > = {
   // TODO: this should require `{ src, input }` for required inputs
   [K in keyof TEventsCausingActors]?:
-    | AnyActorBehavior
+    | AnyActorLogic
     | {
-        src: AnyActorBehavior;
+        src: AnyActorLogic;
         input:
           | Mapper<
               TContext,
@@ -1084,7 +1084,7 @@ export interface MachineConfig<
 export interface ActorImpl {
   src: string;
   id?: string;
-  logic?: AnyActorBehavior;
+  logic?: AnyActorLogic;
   // TODO: delete all the below and replace with logic
   events?: EventObject;
   snapshot?: any;
@@ -1603,7 +1603,7 @@ export interface StateConfig<
   _internalQueue?: Array<TEvent>;
 }
 
-export interface InterpreterOptions<_TActorBehavior extends AnyActorBehavior> {
+export interface InterpreterOptions<_TActorLogic extends AnyActorLogic> {
   /**
    * Whether state actions should be executed immediately upon transition. Defaults to `true`.
    */
@@ -1642,8 +1642,8 @@ export interface InterpreterOptions<_TActorBehavior extends AnyActorBehavior> {
   input?: any;
 
   // state?:
-  //   | PersistedStateFrom<TActorBehavior>
-  //   | InternalStateFrom<TActorBehavior>;
+  //   | PersistedStateFrom<TActorLogic>
+  //   | InternalStateFrom<TActorLogic>;
   state?: any;
 
   /**
@@ -1681,15 +1681,6 @@ export interface Subscribable<T> extends InteropSubscribable<T> {
     complete?: () => void
   ): Subscription;
 }
-
-// TODO: should only take in behaviors
-export type Spawnable =
-  | AnyStateMachine
-  | PromiseLike<any>
-  | InvokeCallback
-  | InteropObservable<any>
-  | Subscribable<any>
-  | ActorBehavior<any, any>;
 
 export type ExtractEvent<
   TEvent extends EventObject,
@@ -1756,7 +1747,7 @@ export type ActorRefFrom<T> = ReturnTypeOrValue<T> extends infer R
       >
     : R extends Promise<infer U>
     ? ActorRef<{ type: string }, U | undefined>
-    : R extends ActorBehavior<infer TEvent, infer TSnapshot>
+    : R extends ActorLogic<infer TEvent, infer TSnapshot>
     ? ActorRef<TEvent, TSnapshot>
     : never
   : never;
@@ -1773,7 +1764,7 @@ export type InterpreterFrom<
   infer TResolvedTypesMeta
 >
   ? Interpreter<
-      ActorBehavior<
+      ActorLogic<
         TEvent,
         State<TContext, TEvent, TActions, TActors, TResolvedTypesMeta>,
         State<TContext, TEvent, TActions, TActors, TResolvedTypesMeta>,
@@ -1831,7 +1822,7 @@ export interface ActorContext<
 
 export type AnyActorContext = ActorContext<any, any, any>;
 
-export interface ActorBehavior<
+export interface ActorLogic<
   TEvent extends EventObject,
   TSnapshot = any,
   TInternalState = any,
@@ -1867,13 +1858,13 @@ export interface ActorBehavior<
   getPersistedState?: (state: TInternalState) => TPersisted;
 }
 
-export type AnyActorBehavior = ActorBehavior<any, any, any, any>;
+export type AnyActorLogic = ActorLogic<any, any, any, any>;
 
 export type SnapshotFrom<T> = ReturnTypeOrValue<T> extends infer R
   ? R extends ActorRef<infer _, infer TSnapshot>
     ? TSnapshot
-    : R extends Interpreter<infer TBehavior>
-    ? SnapshotFrom<TBehavior>
+    : R extends Interpreter<infer TLogic>
+    ? SnapshotFrom<TLogic>
     : R extends StateMachine<
         infer _,
         infer __,
@@ -1882,7 +1873,7 @@ export type SnapshotFrom<T> = ReturnTypeOrValue<T> extends infer R
         infer _____
       >
     ? StateFrom<R>
-    : R extends ActorBehavior<
+    : R extends ActorLogic<
         infer _,
         infer TSnapshot,
         infer __,
@@ -1895,11 +1886,11 @@ export type SnapshotFrom<T> = ReturnTypeOrValue<T> extends infer R
     : never
   : never;
 
-export type EventFromBehavior<TBehavior extends ActorBehavior<any, any>> =
-  TBehavior extends ActorBehavior<infer TEvent, infer _> ? TEvent : never;
+export type EventFromLogic<TLogic extends ActorLogic<any, any>> =
+  TLogic extends ActorLogic<infer TEvent, infer _> ? TEvent : never;
 
-export type PersistedStateFrom<TBehavior extends ActorBehavior<any, any>> =
-  TBehavior extends ActorBehavior<
+export type PersistedStateFrom<TLogic extends ActorLogic<any, any>> =
+  TLogic extends ActorLogic<
     infer _TEvent,
     infer _TSnapshot,
     infer _TInternalState,
@@ -1908,8 +1899,8 @@ export type PersistedStateFrom<TBehavior extends ActorBehavior<any, any>> =
     ? TPersisted
     : never;
 
-export type InternalStateFrom<TBehavior extends ActorBehavior<any, any>> =
-  TBehavior extends ActorBehavior<
+export type InternalStateFrom<TLogic extends ActorLogic<any, any>> =
+  TLogic extends ActorLogic<
     infer _TEvent,
     infer _TSnapshot,
     infer TInternalState,
@@ -1961,8 +1952,8 @@ export type ContextFrom<T> = ReturnTypeOrValue<T> extends infer R
         infer _TActors
       >
     ? TContext
-    : R extends Interpreter<infer TBehavior>
-    ? TBehavior extends StateMachine<infer TContext, infer _>
+    : R extends Interpreter<infer TActorLogic>
+    ? TActorLogic extends StateMachine<infer TContext, infer _>
       ? TContext
       : never
     : never
