@@ -8,18 +8,18 @@ type SourceEvents<States extends StatesDefinition> = {
   }[keyof States[K]['on']];
 }[keyof States];
 
-type EventsByAction<States extends StatesDefinition> = {
+type EventsByState<TStates extends StatesDefinition, TEvent> = Compute<{
+  [Name in keyof TStates]: Extract<TEvent, { type: SourceEvents<TStates> }>;
+}>;
+
+type EventsByAction<States extends StatesDefinition> = Compute<{
   [K in keyof States]: States[K]['entry'] extends string
-    ? { [_ in States[K]['entry']]: K }
+    ? [States[K]['entry'], K]
     : never;
-}[keyof States];
+}>;
 
 type ParseStates<TStates extends StatesDefinition, TEvent> = Compute<{
-  states: Compute<{
-    [Name in keyof TStates]: {
-      events: Extract<TEvent, { type: SourceEvents<TStates> }>;
-    };
-  }>;
+  events: EventsByState<TStates, TEvent>;
   actions: EventsByAction<TStates>;
 }>;
 
@@ -27,19 +27,14 @@ type Conform<T, Base> = T extends Base ? T : Base;
 
 type UnknownMachineConfig = MachineConfig<any, any, any, any, any>;
 
-type ParsedState = {
-  events: unknown;
-};
-
 type ParsedStates = {
-  states: Record<string | number | symbol, ParsedState>;
+  events: { [stateName: Key]: unknown };
   actions: unknown;
 };
 
-type StatesDefinition = Record<
-  string | number | symbol,
-  State<string | number | symbol, unknown>
->;
+type Key = string | symbol | number;
+
+type StatesDefinition = Record<Key, State<Key, unknown>>;
 
 type State<Name, Event> = {
   on: Record<string, Name>;
@@ -47,7 +42,11 @@ type State<Name, Event> = {
   entry?: string | ((event: Event) => void);
 };
 
-type ValidateState<TState, Name, Event> = Conform<TState, State<Name, Event>>;
+type ValidateState<TState, Name, Event> = {
+  [K in keyof TState]: TState[K] extends (...args: any[]) => any
+    ? (event: Event) => void
+    : Conform<TState[K], State<Name, Event>[K]>;
+};
 
 type Machine = Omit<UnknownMachineConfig, 'states'>;
 
@@ -64,8 +63,8 @@ export function createMachine<
       [K in keyof TStates]: ValidateState<
         TStates[K],
         keyof TStates,
-        Parsed['states'][K]['events']
-      > & { entry?: string | ((event: Parsed['states'][K]['events']) => void) };
+        Parsed['events'][K]
+      >;
     };
   },
   implementations?: {}
@@ -80,7 +79,7 @@ export function createMachine<
   //   >
   // >
 ) {
-  return {} as Parsed;
+  return {} as Parsed['actions'];
   // return new StateMachine<any, any, any, any, any>(
   //   config,
   //   implementations as any
@@ -120,6 +119,7 @@ const result = createMachine(
       },
       c: {
         entry: 'doStuff',
+        // ^?
         on: {}
       }
     }
