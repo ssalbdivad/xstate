@@ -37,23 +37,31 @@ type StatesDefinition = Record<
   State<string | number | symbol, unknown>
 >;
 
-type State<StateName extends string | number | symbol, Event> = {
-  on: Record<string, StateName>;
+type State<Name, Event> = {
+  on: Record<string, Name>;
   event?: Event;
+  entry?: (event: Event) => any;
 };
 
 type ValidateState<TState, Name, Event> = Conform<TState, State<Name, Event>>;
 
 type Machine = Omit<UnknownMachineConfig, 'states'>;
 
-export function createMachine<const TConfig extends Machine, const TStates>(
+export function createMachine<
+  const TConfig extends Machine,
+  const TStates,
+  Parsed extends ParsedStates = ParseStates<
+    TStates,
+    TConfig['context']['events']
+  >
+>(
   config: TConfig & {
     states: {
       [K in keyof TStates]: ValidateState<
         TStates[K],
         keyof TStates,
-        ParseStates<TStates, TConfig['context']['events']>[K]['events']
-      >;
+        Parsed[K]['events']
+      > & { entry?: (event: Parsed[K]['events']) => any };
     };
   },
   implementations?: any
@@ -98,7 +106,7 @@ const result = createMachine(
       b: {
         // inline aciton
         entry: (event) => {
-          //     ^?
+          //^?
           event; // { type: 'NEXT'; payload: number }
         },
         on: {
