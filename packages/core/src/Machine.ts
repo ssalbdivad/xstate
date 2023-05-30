@@ -1,25 +1,26 @@
-import {
-  Compute,
-  MachineConfig,
-  StateNodeConfig,
-  StatesConfig
-} from './types.ts';
+import { Compute, MachineConfig } from './types.ts';
 
-type SourceEvents<
-  States extends StatesDefinition,
-  Name extends keyof States
-> = {
+type SourceEvents<States extends StatesDefinition> = {
   [K in keyof States]: {
-    [K2 in keyof States[K]['on']]: States[K]['on'][K2] extends Name
+    [K2 in keyof States[K]['on']]: States[K]['on'][K2] extends keyof States
       ? K2
       : never;
   }[keyof States[K]['on']];
 }[keyof States];
 
+type EventsByAction<States extends StatesDefinition> = {
+  [K in keyof States]: States[K]['entry'] extends string
+    ? { [_ in States[K]['entry']]: K }
+    : never;
+}[keyof States];
+
 type ParseStates<TStates extends StatesDefinition, TEvent> = Compute<{
-  [Name in keyof TStates]: {
-    events: Extract<TEvent, { type: SourceEvents<TStates, Name> }>;
-  };
+  states: Compute<{
+    [Name in keyof TStates]: {
+      events: Extract<TEvent, { type: SourceEvents<TStates> }>;
+    };
+  }>;
+  actions: EventsByAction<TStates>;
 }>;
 
 type Conform<T, Base> = T extends Base ? T : Base;
@@ -30,7 +31,10 @@ type ParsedState = {
   events: unknown;
 };
 
-type ParsedStates = Record<string | number | symbol, ParsedState>;
+type ParsedStates = {
+  states: Record<string | number | symbol, ParsedState>;
+  actions: unknown;
+};
 
 type StatesDefinition = Record<
   string | number | symbol,
@@ -40,7 +44,7 @@ type StatesDefinition = Record<
 type State<Name, Event> = {
   on: Record<string, Name>;
   event?: Event;
-  entry?: (event: Event) => any;
+  entry?: string | ((event: Event) => void);
 };
 
 type ValidateState<TState, Name, Event> = Conform<TState, State<Name, Event>>;
@@ -60,11 +64,11 @@ export function createMachine<
       [K in keyof TStates]: ValidateState<
         TStates[K],
         keyof TStates,
-        Parsed[K]['events']
-      > & { entry?: (event: Parsed[K]['events']) => any };
+        Parsed['states'][K]['events']
+      > & { entry?: string | ((event: Parsed['states'][K]['events']) => void) };
     };
   },
-  implementations?: any
+  implementations?: {}
   //  InternalMachineImplementations<
   //   TConfig['context'],
   //   TConfig['context']['event'],
@@ -76,7 +80,7 @@ export function createMachine<
   //   >
   // >
 ) {
-  return {} as TStates; //ParseStates<TStates, TConfig['context']['events']>;
+  return {} as Parsed;
   // return new StateMachine<any, any, any, any, any>(
   //   config,
   //   implementations as any
@@ -115,9 +119,8 @@ const result = createMachine(
         }
       },
       c: {
-        entry: () => {},
+        entry: 'doStuff',
         on: {}
-        //'doStuff' as const
       }
     }
   },
