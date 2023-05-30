@@ -8,28 +8,40 @@ type SourceEvents<States extends StatesDefinition> = {
   }[keyof States[K]['on']];
 }[keyof States];
 
-type EventsByState<TStates extends StatesDefinition, TEvent> = Compute<{
+type ExtractEventsByState<TStates extends StatesDefinition, TEvent> = Compute<{
   [Name in keyof TStates]: Extract<TEvent, { type: SourceEvents<TStates> }>;
 }>;
 
-type EventsByAction<States extends StatesDefinition> = Compute<{
-  [K in keyof States]: States[K]['entry'] extends string
-    ? [States[K]['entry'], K]
-    : never;
-}>;
+type ExtractEventsByAction<
+  States extends StatesDefinition,
+  ByState extends EventsByState
+> = Compute<
+  {
+    [K in keyof States]: States[K]['entry'] extends string
+      ? { [_ in States[K]['entry']]: ByState[K] }
+      : never;
+  }[keyof States]
+>;
 
 type ParseStates<TStates extends StatesDefinition, TEvent> = Compute<{
-  events: EventsByState<TStates, TEvent>;
-  actions: EventsByAction<TStates>;
+  events: ExtractEventsByState<TStates, TEvent>;
+  actions: ExtractEventsByAction<
+    TStates,
+    ExtractEventsByState<TStates, TEvent>
+  >;
 }>;
 
 type Conform<T, Base> = T extends Base ? T : Base;
 
 type UnknownMachineConfig = MachineConfig<any, any, any, any, any>;
 
+type EventsByState = { [stateName: Key]: unknown };
+
+type EventsByAction = { [actionName: Key]: unknown };
+
 type ParsedStates = {
-  events: { [stateName: Key]: unknown };
-  actions: unknown;
+  events: EventsByState;
+  actions: EventsByAction;
 };
 
 type Key = string | symbol | number;
@@ -67,7 +79,11 @@ export function createMachine<
       >;
     };
   },
-  implementations?: {}
+  implementations: {
+    actions: {
+      [K in keyof Parsed['actions']]: (event: Parsed['actions'][K]) => void;
+    };
+  }
   //  InternalMachineImplementations<
   //   TConfig['context'],
   //   TConfig['context']['event'],
@@ -127,6 +143,7 @@ const result = createMachine(
   {
     actions: {
       doStuff: (event) => {
+        //      ^?
         event; // { type: 'NEXT'; payload: number }
       }
     }
