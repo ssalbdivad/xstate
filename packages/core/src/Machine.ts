@@ -119,7 +119,8 @@ const result = createMachine(
     states: {
       a: {
         on: {
-          NEXT: 'b'
+          NEXT: 'b',
+          MOAR: 'c'
         }
       },
       b: {
@@ -130,12 +131,10 @@ const result = createMachine(
         },
         on: {
           NEXT: 'c'
-          //^?
         }
       },
       c: {
         entry: 'doStuff',
-        // ^?
         on: {}
       }
     }
