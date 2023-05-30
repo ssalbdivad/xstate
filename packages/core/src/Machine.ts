@@ -1,29 +1,12 @@
-import { ResolveTypegenMeta, TypegenDisabled } from './typegenTypes.ts';
 import {
-  ActorMap,
   Compute,
-  InternalMachineImplementations,
   MachineConfig,
-  ParameterizedObject,
   StateNodeConfig,
   StatesConfig
 } from './types.ts';
 
-// type NextStates<
-//   States extends StatesConfig<any, any>,
-//   Name extends keyof States
-// > ={
-//   [K in keyof States[Name]['on']]: States[Name]["on"][K] extends infer NextName extends keyof States
-//     ? NextName | NextStates<States, NextName>
-//     : never;
-// }[keyof States[Name]["on"]];
-
-// type StateNextEvents<States extends StatesConfig<any, any>> = Compute<{
-//   [Name in keyof States]: NextStates<States, Name>;
-// }>;
-
 type SourceEvents<
-  States extends StatesConfig<any, any>,
+  States extends StatesDefinition,
   Name extends keyof States
 > = {
   [K in keyof States]: {
@@ -33,21 +16,13 @@ type SourceEvents<
   }[keyof States[K]['on']];
 }[keyof States];
 
-type ParseStates<TStates extends UnknownStatesConfig, TEvent> = Compute<{
+type ParseStates<TStates extends StatesDefinition, TEvent> = Compute<{
   [Name in keyof TStates]: {
     events: Extract<TEvent, { type: SourceEvents<TStates, Name> }>;
   };
 }>;
 
-type ParseMachine<TConfig extends UnknownMachineConfig> = Compute<{
-  states: ParseStates<TConfig['states'] & {}, TConfig['context']['events']>;
-}>;
-
 type Conform<T, Base> = T extends Base ? T : Base;
-
-type UnknownStateConfig = StateNodeConfig<any, any>;
-
-type UnknownStatesConfig = StatesConfig<any, any>;
 
 type UnknownMachineConfig = MachineConfig<any, any, any, any, any>;
 
@@ -55,47 +30,45 @@ type ParsedState = {
   events: unknown;
 };
 
-type ParsedMachine = {
-  states: Record<string | number | symbol, ParsedState>;
+type ParsedStates = Record<string | number | symbol, ParsedState>;
+
+type StatesDefinition = Record<
+  string | number | symbol,
+  State<string | number | symbol, unknown>
+>;
+
+type State<StateName extends string | number | symbol, Event> = {
+  on: Record<string, StateName>;
+  event?: Event;
 };
 
-type ValidateStates<
-  TStates extends UnknownStatesConfig,
-  Parsed extends ParsedMachine
-> = {
-  [K in keyof TStates]: Conform<
-    TStates[K],
-    {
-      [K2 in keyof TStates[K] as K2 extends 'entry'
-        ? never
-        : K2]: TStates[K][K2];
-    }
-  > & { entry?: (event: Parsed['states'][K]['events']) => void };
-};
+type ValidateState<TState, Name, Event> = Conform<TState, State<Name, Event>>;
 
-type ValidateMachine<
-  TConfig extends UnknownMachineConfig,
-  Parsed extends ParsedMachine
-> = {
-  [K in keyof TConfig]: K extends 'states'
-    ? ValidateStates<TConfig[K] & {}, Parsed>
-    : TConfig[K];
-};
+type Machine = Omit<UnknownMachineConfig, 'states'>;
 
-export function createMachine<TConfig extends UnknownMachineConfig>(
-  config: ValidateMachine<TConfig, ParseMachine<TConfig>>,
-  implementations?: InternalMachineImplementations<
-    TConfig['context'],
-    TConfig['context']['event'],
-    ResolveTypegenMeta<
-      TypegenDisabled,
-      TConfig['context']['event'],
-      ParameterizedObject,
-      ActorMap
-    >
-  >
+export function createMachine<const TConfig extends Machine, const TStates>(
+  config: TConfig & {
+    states: {
+      [K in keyof TStates]: ValidateState<
+        TStates[K],
+        keyof TStates,
+        ParseStates<TStates, TConfig['context']['events']>[K]['events']
+      >;
+    };
+  },
+  implementations?: any
+  //  InternalMachineImplementations<
+  //   TConfig['context'],
+  //   TConfig['context']['event'],
+  //   ResolveTypegenMeta<
+  //     TypegenDisabled,
+  //     TConfig['context']['event'],
+  //     ParameterizedObject,
+  //     ActorMap
+  //   >
+  // >
 ) {
-  return {} as ParseMachine<TConfig>;
+  return {} as TStates; //ParseStates<TStates, TConfig['context']['events']>;
   // return new StateMachine<any, any, any, any, any>(
   //   config,
   //   implementations as any
@@ -115,11 +88,11 @@ const result = createMachine(
             type: 'MOAR';
           }
     },
-    initial: 'a' as const,
+    initial: 'a',
     states: {
       a: {
         on: {
-          NEXT: 'b' as const
+          NEXT: 'b'
         }
       },
       b: {
@@ -129,11 +102,14 @@ const result = createMachine(
           event; // { type: 'NEXT'; payload: number }
         },
         on: {
-          NEXT: 'c' as const
+          NEXT: 'c'
+          //^?
         }
       },
       c: {
-        entry: () => {} //'doStuff' as const
+        entry: () => {},
+        on: {}
+        //'doStuff' as const
       }
     }
   },
