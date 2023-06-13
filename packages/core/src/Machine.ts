@@ -60,24 +60,25 @@ type ValidateState<TState, Name, Event> = {
     : Conform<TState[K], State<Name, Event>[K]>;
 };
 
-type Machine = Omit<UnknownMachineConfig, 'states'>;
+type Machine = Omit<UnknownMachineConfig, 'states'> & { states: unknown };
 
 export function createMachine<
   const TConfig extends Machine,
-  const TStates,
   Parsed extends ParsedStates = ParseStates<
-    TStates,
+    TConfig['states'],
     TConfig['context']['events']
   >
 >(
-  config: TConfig & {
-    states: {
-      [K in keyof TStates]: ValidateState<
-        TStates[K],
-        keyof TStates,
-        Parsed['events'][K]
-      >;
-    };
+  config: {
+    [k in keyof TConfig]: k extends 'states'
+      ? {
+          [k2 in keyof TConfig[k]]: ValidateState<
+            TConfig[k][k2],
+            keyof TConfig[k],
+            Parsed['events'][k2]
+          >;
+        }
+      : TConfig[k];
   },
   implementations: {
     actions: {
