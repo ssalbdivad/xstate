@@ -51,7 +51,7 @@ type StatesDefinition = Record<Key, State<Key, unknown>>;
 type State<Name, Event> = {
   on: Record<string, Name>;
   event?: Event;
-  entry?: string | ((event: Event) => void);
+  entry?: string | ((event: unknown) => void);
 };
 
 type ValidateState<TState, Name, Event> = {
